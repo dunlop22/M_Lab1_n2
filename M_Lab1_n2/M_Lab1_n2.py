@@ -92,13 +92,13 @@ def sort_Johnson(dannie_sort):
         #удаление строки, в которой найден минимальный элемент
         dannie_sort.remove(dannie_sort[num])
 
-def create_struct(dannie_str):
+def create_struct(dannie_str, color_mass):
     #массивы для создания структуры
-    task = []
-    color = []
-    start = []
-    end = []
-    task_d = []
+    task = []       #Наименование станка
+    color = []      #Цвет на диаграмме
+    start = []      #Время начала обработки n детали
+    end = []        #Время окончания обработки n детали
+    task_d = []     #Длительность обработки n детали
 
     for i in range (2 * len(dannie_str)):
         task.append([])
@@ -112,8 +112,8 @@ def create_struct(dannie_str):
         task[i] = "A"
         task[i + len(dannie_str)] = "B"
     
-        color[i] = color[i + len(dannie_str)] = get_color()   #заполение цветами
-    
+        #color[i] = color[i + len(dannie_str)] = get_color()   #заполение цветами
+        color[i] = color[i + len(dannie_str)] = color_mass[dannie_str[i][0]]
         if (i == 0):
             start[i] = 0
             start[i + len(dannie_str)] = dannie_str[i][1]
@@ -144,7 +144,25 @@ def create_struct(dannie_str):
     
     return struct
 
+def gia_Gantt(data):
+    fig, axs = plt.subplots(nrows = len(data), ncols = 1)
+    plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=0.35)
 
+    fig.canvas.manager.set_window_title('Модель задачи Джонсона‐Белмана')
+
+    for i in range(len(data)):
+        axs[i].barh(y = data[i][0]['task'], width=data[i][0]['task_duration'], left=data[i][0]['start'], color=data[i][0]['color'])
+        axs[i].invert_yaxis()
+        axs[i].set_xlim([0, max(data[0][0]['end'][len(data[0][0]['end'])-1], data[0][0]['end'][len(data[0][0]['end'])-1])+3])
+
+    axs[0].set_title("График Ганта с изначальными данными")
+    axs[1].set_title("График Ганта с оптимальными данными")
+    plt.show()
+
+def generate_color(color_mass):
+    color_mass.append('#' + ''.join([random.choice('ABCDE1234567890') for i in range(6)]))
+
+color_massiv = []
 dannie = []     #Исходные данные
 dannie1 = []    #SORT JOHNSON (A, B)
 
@@ -155,8 +173,15 @@ if (read_file()):
     print("\nВремя простоя (при исходном порядке):", prostoi_stanka(dannie))
 
     #Структура данных для исходных данных
-    struct_start = create_struct(dannie)
+    dannie_temp = []
+    dannie_temp = dannie
 
+    #Заполнение цветового массива
+    for i in range(len(dannie1)):
+        generate_color(color_massiv)
+
+    struct_start = create_struct(dannie,color_massiv)
+    print(struct_start)
     #Создание структуры для оптимального варианта
     StartOldN2 = time.time() ## точка отсчета времени
     tic = time.perf_counter()
@@ -172,17 +197,11 @@ if (read_file()):
     
     print("\nВремя простоя (при оптимальном порядке, метод Джонсона):", prostoi_stanka(dannie1))
 
-    struct_optimal = create_struct(dannie1)
+    
+
+    struct_optimal1 = create_struct(dannie1, color_massiv)
 
     print("Общее время обработки деталей:")
-    print(struct_optimal['end']. values [len(dannie1) * (len(dannie1[0]) - 1) - 1])
+    print(struct_optimal1['end']. values [len(dannie1) * (len(dannie1[0]) - 1) - 1])
 
-    axs = plt.subplots(figsize=(15, 8), facecolor='#25253c')
-
-    #Построение диаграммы
-    for i in range(len(struct_optimal)):
-        axs[i].barh(y = struct_optimal[i][0]['task'], width=struct_optimal[i][0]['task_duration'], left=struct_optimal[i][0]['start'], color=struct_optimal[i][0]['color'])
-        axs[i].invert_yaxis()
-        axs[i].set_xlim([0, max(struct_optimal[i][0]['end'][len(struct_optimal[i][0]['end'])-1], struct_optimal[i][0]['end'][len(struct_optimal[i][0]['end'])-1])+3])
-
-    plt.show()
+    gia_Gantt([[struct_start],[struct_optimal1]])
